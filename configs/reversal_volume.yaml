@@ -1,0 +1,48 @@
+schema_version: 1
+research:
+  id: reversal-volume-v1
+  hypothesis: Low relative volume strengthens short-term reversal.
+  # These OOS years have already been inspected in the first manual run.
+  oos_previously_seen: true
+data:
+  region: us
+  universe: sp500
+  warmup_start: "2017-09-01"
+periods:
+  train_start: "2018-01-01"
+  train_end_exclusive: "2024-01-01"
+  oos_start: "2024-01-01"
+  oos_end_exclusive: "2026-01-01"
+  development_end: "2018-03-30"
+features:
+  rev:
+    expression: "1 - $close / Ref($close, 5)"
+    count_expression: "Count($close, 6)"
+    required_count: 6
+  rv:
+    expression: "Mean($volume, 5) / Mean($volume, 60)"
+    count_expression: "Count($volume, 60)"
+    required_count: 60
+    positive_denominator: "Mean($volume, 60)"
+  vol20:
+    expression: "Std($close / Ref($close, 1) - 1, 20)"
+    count_expression: "Count($close / Ref($close, 1) - 1, 20)"
+    required_count: 20
+candidate:
+  kind: standardized_product
+  left: rev
+  right: rv
+  right_sign: -1
+standardization:
+  ddof: 0
+label:
+  entry_offset: 1
+  exit_offset: 6
+model:
+  alpha: 1.0
+  fit_intercept: true
+bootstrap:
+  block_length: 20
+  n_resamples: 1000
+  seed: 42
+  confidence: 0.95

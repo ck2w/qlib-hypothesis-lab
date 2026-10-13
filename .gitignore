@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local research files
+/data/
+/upstream/
+/runs/
+
+# macOS metadata
+.DS_Store
