@@ -9,7 +9,7 @@ import pandas as pd
 
 from .config import load_config
 from .models import MODEL_FEATURES
-from .evaluate import bootstrap_delta
+from .evaluate import bootstrap_delta, hypothesis_verdict
 
 
 def canonical_config_hash(config):
@@ -160,12 +160,12 @@ def save_run(run_dir, full, daily_ic, predictions, models, interval, n_train, au
             }
             for name, model in models.items()
         },
-        "interpretation": (
-            "Hypothesis supported under this protocol."
-            if full and interval["status"] == "ok" and interval["ci_low"] > 0
-            else "Hypothesis not supported under this protocol." if full
-            else "In-sample development output; not an out-of-sample hypothesis verdict."
-        ),
+        "interpretation": {
+            "development": "In-sample development output; not an out-of-sample hypothesis verdict.",
+            "unavailable": "Hypothesis verdict unavailable: insufficient dates under this protocol.",
+            "supported": "Hypothesis supported under this protocol.",
+            "not_supported": "Hypothesis not supported under this protocol.",
+        }[hypothesis_verdict(full, interval)],
     }
     (run_dir / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False) + "\n"

@@ -1,0 +1,50 @@
+{
+  "run_type": "formal_out_of_sample",
+  "signal_start": "2024-01-01",
+  "signal_end": "2025-12-31",
+  "oos_previously_seen": true,
+  "config_sha256": "9fb04b3564aecb8a4d16730febc8213d9fb1b7c8b82494203deee504cd2e87f1",
+  "config_canonical_sha256": "74b4616ec23e26e74de555d58a4822416d725fa083fc7fdaa9eee5f882a69042",
+  "protocol_frozen": true,
+  "n_train": 693258,
+  "n_evaluation": 247233,
+  "mean_ic": {
+    "baseline": 0.017000961651612558,
+    "with_candidate": 0.017098077174747376
+  },
+  "paired_delta_bootstrap": {
+    "n_dates": 502,
+    "block_length": 20,
+    "n_resamples": 1000,
+    "seed": 42,
+    "confidence": 0.95,
+    "mean_delta": 9.711552313482091e-05,
+    "ci_low": -0.00017261948442563532,
+    "ci_high": 0.00047000842981317724,
+    "status": "ok"
+  },
+  "models": {
+    "baseline": {
+      "alpha": 1.0,
+      "fit_intercept": true,
+      "intercept": 0.002446963885215798,
+      "coefficients": {
+        "z_rev": 0.0006827512115390016,
+        "z_rv": -0.0001521700634695548,
+        "z_vol20": 0.0006343847799803964
+      }
+    },
+    "with_candidate": {
+      "alpha": 1.0,
+      "fit_intercept": true,
+      "intercept": 0.0024469636536004033,
+      "coefficients": {
+        "z_rev": 0.0006703419989759221,
+        "z_rv": -0.0001555221740333819,
+        "z_vol20": 0.0006340386441863295,
+        "candidate": -2.767363599177453e-05
+      }
+    }
+  },
+  "interpretation": "Hypothesis not supported under this protocol."
+}

@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from .evaluate import hypothesis_verdict
+
 
 def number(value):
     return "N/A" if value is None or not np.isfinite(value) else f"{value:.6f}"
@@ -59,14 +61,12 @@ def generate_report(run_dir, output=None):
     factors = pd.read_csv(run_dir / "factor_ic.csv", index_col="datetime")
     quintiles = pd.read_csv(run_dir / "quintile_returns.csv", index_col="datetime")
     rank_changes = pd.read_csv(run_dir / "rank_change.csv", index_col="datetime")
-    if not formal:
-        verdict = "样本内开发运行，只检查工作流，不作样本外假设判定。"
-    elif interval["status"] != "ok":
-        verdict = "区间无法估计，不能完成预设的增量价值判定。"
-    elif interval["mean_delta"] > 0 and interval["ci_low"] > 0:
-        verdict = "在本协议下，候选的增量预测价值获得支持。"
-    else:
-        verdict = "在本协议下，候选的增量预测价值未获支持；不等于证明没有效果。"
+    verdict = {
+        "development": "样本内开发运行，只检查工作流，不作样本外假设判定。",
+        "unavailable": "区间无法估计，不能完成预设的增量价值判定。",
+        "supported": "在本协议下，候选的增量预测价值获得支持。",
+        "not_supported": "在本协议下，候选的增量预测价值未获支持；不等于证明没有效果。",
+    }[hypothesis_verdict(formal, interval)]
     lines = [
         "# Qlib 研究运行报告", "", verdict, "",
         f"运行类型：{'样本外评价' if formal else '样本内开发'}。",

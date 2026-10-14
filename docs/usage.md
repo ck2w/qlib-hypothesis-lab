@@ -79,6 +79,6 @@ Run statuses are `running`, `frozen`, `completed`, `data_failed`, `check_failed`
 
 The current tool supports three named feature roles (rev/rv/vol20), a standardized product candidate, two Ridge comparisons, future-open return labels, and the fixed evaluation workflow. It accepts configured historical Qlib expressions from an explicit operator/field whitelist. Count conditions must cover the formula's historical dependencies; bootstrap block length must cover label holding time.
 
-It does not implement arbitrary candidate formulas, arbitrary model families or automatic paper-to-experiment conversion. New ideas outside this structure require explicit design and code adaptation. A future skill will guide that decision and call these tools; it is not implemented yet.
+It does not implement arbitrary candidate formulas, arbitrary model families or automatic paper-to-experiment conversion. New ideas outside this structure require explicit design and code adaptation. The repository skill guides that decision and calls these tools. It has been tested with three positive discovery prompts, one near-miss, and a full workflow reproduction.
 
 The CLI entry lives in `tools/manual_experiment.py`; reusable implementation lives in `tools/lab/`. Personal course plans and learning notes are intentionally not part of this repository.

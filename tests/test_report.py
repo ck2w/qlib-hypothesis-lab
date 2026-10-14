@@ -98,3 +98,39 @@ def test_existing_report_is_not_overwritten(tmp_path):
     with pytest.raises(FileExistsError):
         generate_report(run)
     assert output.read_bytes() == original
+
+
+@pytest.mark.parametrize("formal,status,mean_delta,ci_low,expected,report_phrase", [
+    (True, "insufficient_dates", .01, None, "Hypothesis verdict unavailable: insufficient dates under this protocol.", "不能完成预设"),
+    (True, "ok", .01, .005, "Hypothesis supported under this protocol.", "增量预测价值获得支持"),
+    (True, "ok", .01, -.005, "Hypothesis not supported under this protocol.", "增量预测价值未获支持"),
+    (True, "ok", 0., .005, "Hypothesis not supported under this protocol.", "增量预测价值未获支持"),
+    (False, "ok", .01, .005, "In-sample development output; not an out-of-sample hypothesis verdict.", "不作样本外假设判定"),
+])
+def test_saved_summary_and_report_share_protocol_verdict(
+        tmp_path, formal, status, mean_delta, ci_low, expected, report_phrase):
+    # Catch missing insufficient-data handling and support without positive mean.
+    from lab.artifacts import save_run
+    from lab.config import load_config
+    from lab.models import fit_models
+
+    run = make_run(tmp_path, formal=formal)
+    config_path = Path(__file__).resolve().parents[1] / "configs/reversal_volume.yaml"
+    config = load_config(config_path)
+    (run / "config.yaml").write_bytes(config_path.read_bytes())
+    train = pd.DataFrame({"z_rev": [0., 1., 2.], "z_rv": [2., 0., 1.],
+                          "z_vol20": [1., 2., 0.], "candidate": [0., 2., 1.],
+                          "label": [.01, .02, -.01]})
+    models = fit_models(train, config)
+    daily = pd.read_csv(run / "daily_ic.csv", index_col="datetime", parse_dates=True)
+    daily["with_candidate"] = daily["baseline"] + mean_delta
+    daily["delta"] = mean_delta
+    interval = json.loads((run / "summary.json").read_text())["paired_delta_bootstrap"]
+    interval.update(status=status, mean_delta=mean_delta, ci_low=ci_low,
+                    ci_high=None if status != "ok" else .02)
+    auxiliary = {name: pd.read_csv(run / (name + ".csv"), index_col=0)
+                 for name in ["factor_ic", "quintile_returns", "quintile_counts", "rank_change"]}
+    save_run(run, formal, daily, pd.DataFrame(), models, interval, len(train), auxiliary, config)
+    summary = json.loads((run / "summary.json").read_text())
+    assert summary["interpretation"] == expected
+    assert report_phrase in generate_report(run).read_text()

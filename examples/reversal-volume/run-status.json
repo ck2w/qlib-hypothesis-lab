@@ -1,0 +1,16 @@
+{
+  "status": "completed",
+  "run_type": "formal_out_of_sample",
+  "completed_stages": [
+    "validation",
+    "freezing",
+    "verification",
+    "data",
+    "features",
+    "samples",
+    "fit",
+    "evaluation",
+    "save",
+    "report"
+  ]
+}

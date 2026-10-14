@@ -101,3 +101,14 @@ def evaluate_auxiliary(signals, samples, calendar):
         "quintile_counts": quintile_counts,
         "rank_change": rank_change.to_frame(),
     }
+
+
+def hypothesis_verdict(formal, interval):
+    """Apply the predeclared decision once for all result presentations."""
+    if not formal:
+        return "development"
+    if interval["status"] != "ok":
+        return "unavailable"
+    if interval["mean_delta"] > 0 and interval["ci_low"] > 0:
+        return "supported"
+    return "not_supported"
