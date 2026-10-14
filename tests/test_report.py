@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from lab.report import generate_report
+from lab.report import generate_report, interval_text
 
 
 def make_run(tmp_path, formal=True, seen=False):
@@ -53,7 +53,7 @@ def make_run(tmp_path, formal=True, seen=False):
 def test_formal_report_uses_saved_values_and_predefined_verdict(tmp_path):
     run = make_run(tmp_path)
     text = generate_report(run).read_text()
-    assert "增量预测价值未获支持" in text
+    assert "Incremental predictive value is not supported" in text
     assert "0.010000" in text and "[-0.005000, 0.020000]" in text
     assert "| 2024 | 2 | 0.020000 | 0.030000" in text
     assert "[daily_ic.csv](daily_ic.csv)" in text
@@ -66,13 +66,13 @@ def test_development_output_never_claims_hypothesis_support(tmp_path):
     summary["paired_delta_bootstrap"]["ci_low"] = .005
     path.write_text(json.dumps(summary))
     text = generate_report(run).read_text()
-    assert "不作样本外假设判定" in text
-    assert "增量预测价值获得支持" not in text
+    assert "not an out-of-sample hypothesis verdict" in text
+    assert "Incremental predictive value is supported" not in text
 
 
 def test_previously_seen_oos_is_marked(tmp_path):
     text = generate_report(make_run(tmp_path, seen=True)).read_text()
-    assert "不是新的独立验证" in text
+    assert "not new independent validation" in text
 
 
 def test_missing_evidence_does_not_create_report(tmp_path):
@@ -86,7 +86,7 @@ def test_missing_evidence_does_not_create_report(tmp_path):
 def test_modified_frozen_protocol_is_rejected(tmp_path):
     run = make_run(tmp_path)
     (run / "protocol.md").write_text("edited after freeze")
-    with pytest.raises(ValueError, match="已改变"):
+    with pytest.raises(ValueError, match="has changed"):
         generate_report(run)
     assert not (run / "report.md").exists()
 
@@ -101,11 +101,11 @@ def test_existing_report_is_not_overwritten(tmp_path):
 
 
 @pytest.mark.parametrize("formal,status,mean_delta,ci_low,expected,report_phrase", [
-    (True, "insufficient_dates", .01, None, "Hypothesis verdict unavailable: insufficient dates under this protocol.", "不能完成预设"),
-    (True, "ok", .01, .005, "Hypothesis supported under this protocol.", "增量预测价值获得支持"),
-    (True, "ok", .01, -.005, "Hypothesis not supported under this protocol.", "增量预测价值未获支持"),
-    (True, "ok", 0., .005, "Hypothesis not supported under this protocol.", "增量预测价值未获支持"),
-    (False, "ok", .01, .005, "In-sample development output; not an out-of-sample hypothesis verdict.", "不作样本外假设判定"),
+    (True, "insufficient_dates", .01, None, "Hypothesis verdict unavailable: insufficient dates under this protocol.", "cannot complete the predefined"),
+    (True, "ok", .01, .005, "Hypothesis supported under this protocol.", "Incremental predictive value is supported"),
+    (True, "ok", .01, -.005, "Hypothesis not supported under this protocol.", "Incremental predictive value is not supported"),
+    (True, "ok", 0., .005, "Hypothesis not supported under this protocol.", "Incremental predictive value is not supported"),
+    (False, "ok", .01, .005, "In-sample development output; not an out-of-sample hypothesis verdict.", "not an out-of-sample hypothesis verdict"),
 ])
 def test_saved_summary_and_report_share_protocol_verdict(
         tmp_path, formal, status, mean_delta, ci_low, expected, report_phrase):
@@ -134,3 +134,17 @@ def test_saved_summary_and_report_share_protocol_verdict(
     summary = json.loads((run / "summary.json").read_text())
     assert summary["interpretation"] == expected
     assert report_phrase in generate_report(run).read_text()
+
+
+def test_generated_report_uses_english_sections(tmp_path):
+    text = generate_report(make_run(tmp_path)).read_text()
+    for section in ["# Qlib Research Run Report", "## Primary metrics",
+                    "## Auxiliary results", "## Model parameters", "## Evidence files"]:
+        assert section in text
+    assert "Training samples: 10; evaluation samples: 6; paired valid dates: 2." in text
+    assert "not evidence of no effect" in text
+    assert not any("\u4e00" <= char <= "\u9fff" for char in text)
+
+
+def test_unavailable_interval_is_explained_in_english():
+    assert interval_text({"status": "insufficient_dates"}) == "Unavailable (insufficient valid dates)"

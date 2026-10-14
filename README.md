@@ -301,7 +301,7 @@ This file tree applies to successful full runs. A freeze-only run has no researc
 
 ### 👀 What does the result look like?
 
-An **English presentation of the saved worked case** would read as follows. This is a preview of the evidence-backed explanation, not a new run or a verbatim generated report; the current CLI report headings and some messages remain in Chinese.
+An **English presentation of the saved worked case** would read as follows. This is a preview of the evidence-backed explanation, not a new run or a verbatim generated report; newly generated report headings and explanations are in English; historical reports retain their original language. Original exception messages are preserved in failure reports.
 
 | Report item | Worked-case preview |
 |---|---|

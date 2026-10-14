@@ -32,7 +32,8 @@ def test_failures_save_state_and_report(tmp_path, stage, expected, error):
     assert (run / "checks.json").is_file()
     report = (run / "report.md").read_text()
     assert expected in report
-    assert "未运行" in report
+    assert "Not run or incomplete" in report
+    assert "# Qlib Research Run Failed" in report
     assert not (run / "summary.json").exists()
 
 
@@ -81,5 +82,5 @@ def test_failure_after_evaluation_does_not_claim_it_was_unrun(tmp_path):
             tracker.stage("save")
             raise RuntimeError("save failed")
     text = (run / "report.md").read_text()
-    assert "已执行" in text
-    assert "有效研究结论" in text
+    assert "Evaluation ran" in text
+    assert "no valid research conclusion" in text

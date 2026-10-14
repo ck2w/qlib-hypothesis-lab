@@ -15,7 +15,7 @@ def number(value):
 
 def interval_text(interval):
     if interval["status"] != "ok":
-        return "无法估计（有效日期不足）"
+        return "Unavailable (insufficient valid dates)"
     return f"[{number(interval['ci_low'])}, {number(interval['ci_high'])}]"
 
 
@@ -33,24 +33,24 @@ def generate_report(run_dir, output=None):
                 "quintile_returns.csv", "quintile_counts.csv", "rank_change.csv", prediction_file]
     for name in required:
         if not (run_dir / name).is_file():
-            raise FileNotFoundError(f"报告证据缺失：{name}")
+            raise FileNotFoundError(f"Missing report evidence: {name}")
     freeze = None
     if formal:
         if not summary["protocol_frozen"]:
-            raise ValueError("正式结果没有协议冻结记录。")
+            raise ValueError("Formal results have no frozen protocol record.")
         freeze = json.loads((run_dir / "freeze.json").read_text())
         for name, digest in freeze["hashes"].items():
             source = (run_dir / name).resolve()
             if not source.is_relative_to(run_dir):
-                raise ValueError("冻结文件路径超出运行目录。")
+                raise ValueError("Frozen file path is outside the run directory.")
             if hashlib.sha256(source.read_bytes()).hexdigest() != digest:
-                raise ValueError(f"冻结文件内容已改变：{name}")
+                raise ValueError(f"Frozen file content has changed: {name}")
 
     daily = pd.read_csv(run_dir / "daily_ic.csv", index_col="datetime", parse_dates=True)
     paired = daily.dropna(subset=["baseline", "with_candidate"])
     interval = summary["paired_delta_bootstrap"]
     if len(paired) != interval["n_dates"]:
-        raise ValueError("日度 IC 与摘要的有效日期数不一致。")
+        raise ValueError("Daily IC valid-date count differs from the summary.")
     np.testing.assert_allclose(paired["delta"], paired["with_candidate"] - paired["baseline"], rtol=1e-10, atol=1e-12)
     if len(paired):
         for name in ["baseline", "with_candidate"]:
@@ -62,40 +62,40 @@ def generate_report(run_dir, output=None):
     quintiles = pd.read_csv(run_dir / "quintile_returns.csv", index_col="datetime")
     rank_changes = pd.read_csv(run_dir / "rank_change.csv", index_col="datetime")
     verdict = {
-        "development": "样本内开发运行，只检查工作流，不作样本外假设判定。",
-        "unavailable": "区间无法估计，不能完成预设的增量价值判定。",
-        "supported": "在本协议下，候选的增量预测价值获得支持。",
-        "not_supported": "在本协议下，候选的增量预测价值未获支持；不等于证明没有效果。",
+        "development": "In-sample development run: workflow check only, not an out-of-sample hypothesis verdict.",
+        "unavailable": "The interval is unavailable; cannot complete the predefined incremental-value assessment.",
+        "supported": "Incremental predictive value is supported under this protocol.",
+        "not_supported": "Incremental predictive value is not supported under this protocol; this is not evidence of no effect.",
     }[hypothesis_verdict(formal, interval)]
     lines = [
-        "# Qlib 研究运行报告", "", verdict, "",
-        f"运行类型：{'样本外评价' if formal else '样本内开发'}。",
-        f"评价信号日期：{summary['signal_start']} 至 {summary['signal_end']}。",
-        f"训练样本：{summary['n_train']:,}；评价样本：{summary['n_evaluation']:,}；共同有效日期：{len(paired)}。", "",
+        "# Qlib Research Run Report", "", verdict, "",
+        f"Run type: {'Out-of-sample evaluation' if formal else 'In-sample development'}.",
+        f"Evaluation signal dates: {summary['signal_start']} to {summary['signal_end']}.",
+        f"Training samples: {summary['n_train']:,}; evaluation samples: {summary['n_evaluation']:,}; paired valid dates: {len(paired)}.", "",
     ]
     if summary.get("oos_previously_seen"):
-        lines += ["本次使用的样本外期间已看过；这是工作流复现或探索性评价，不是新的独立验证。", ""]
-    lines += ["## 主指标", "", "| 期间 | 有效日期 | 基准 IC | 加候选 IC | 配对增量 | bootstrap 区间 |",
+        lines += ["The out-of-sample period has already been inspected. This is workflow reproduction or exploratory evaluation, not new independent validation.", ""]
+    lines += ["## Primary metrics", "", "| Period | Valid dates | Baseline IC | With-candidate IC | Paired increment | Bootstrap interval |",
               "|---|---:|---:|---:|---:|---|",
-              f"| 合并 | {len(paired)} | {number(summary['mean_ic']['baseline'])} | {number(summary['mean_ic']['with_candidate'])} | {number(interval['mean_delta'])} | {interval_text(interval)} |"]
+              f"| Pooled | {len(paired)} | {number(summary['mean_ic']['baseline'])} | {number(summary['mean_ic']['with_candidate'])} | {number(interval['mean_delta'])} | {interval_text(interval)} |"]
     for year, row in annual.iterrows():
         lines.append(f"| {year} | {int(row['n_dates'])} | {number(row['baseline'])} | {number(row['with_candidate'])} | {number(row['delta'])} | {interval_text(annual_intervals[str(year)])} |")
-    lines += ["", f"移动日期块长 {interval['block_length']}，重采样 {interval['n_resamples']} 次，seed={interval['seed']}。",
-              f"区间置信水平 {interval.get('confidence', .95):.0%}；合并样本外为主判定，年度结果为辅助。" if formal else "开发区间仅用于检查计算流程。", "",
-              "两个模型使用相同的训练样本和每日评价股票；主增量只取共同有效 IC 日期。", "",
-              "## 辅助结果", "", "| 单因子 | 平均日度 Rank IC |", "|---|---:|"]
+    lines += ["", f"Moving date-block length: {interval['block_length']}; resamples: {interval['n_resamples']}; seed={interval['seed']}.",
+              f"Confidence level: {interval.get('confidence', .95):.0%}. The pooled out-of-sample comparison is primary; annual results are auxiliary." if formal else "Development intervals are used only to check the calculation workflow.", "",
+              "Both models use identical training samples and daily evaluation stocks; the primary increment uses only dates with valid IC for both models.", "",
+              "## Auxiliary results", "", "| Standalone factor | Mean daily Rank IC |", "|---|---:|"]
     for name, value in factors.mean().items():
         lines.append(f"| {name} | {number(value)} |")
-    lines += ["", "| 候选五分位 | 平均未来收益 |", "|---|---:|"]
+    lines += ["", "| Candidate quintile | Mean forward return |", "|---|---:|"]
     for name, value in quintiles.mean().items():
         lines.append(f"| {name} | {number(value)} |")
-    lines += ["", f"平均信号百分位排名变化：{number(rank_changes['rank_change'].mean())}。这不是实际交易换手。", "",
-              "单因子 IC 不替代组合增量判断。分组收益没有计入成本、借券约束和容量，不代表可实现交易收益。", "",
-              "## 模型参数", "", "| 模型 | alpha | 截距 | 特征系数 |", "|---|---:|---:|---|"]
+    lines += ["", f"Mean change in signal percentile ranks: {number(rank_changes['rank_change'].mean())}. This is not actual trading turnover.", "",
+              "Standalone factor IC does not replace the incremental-value assessment. Group returns exclude transaction costs, borrowing constraints and capacity; they do not represent executable trading returns.", "",
+              "## Model parameters", "", "| Model | Alpha | Intercept | Feature coefficients |", "|---|---:|---:|---|"]
     for name, model in summary["models"].items():
         coefficients = "; ".join(f"{key}={number(value)}" for key, value in model["coefficients"].items())
         lines.append(f"| {name} | {model['alpha']} | {number(model['intercept'])} | {coefficients} |")
-    lines += ["", "## 证据文件", "", "报告仅读取本次运行保存的文件；生成报告没有重新拟合模型或重新运行实验。", ""]
+    lines += ["", "## Evidence files", "", "This report reads only saved evidence from this run. Report generation does not refit models or rerun the experiment.", ""]
     for name in ["summary.json", *required]:
         lines.append(f"- [{name}]({name})")
     for name in ["manifest.json", "checks.json"]:
@@ -103,7 +103,7 @@ def generate_report(run_dir, output=None):
             lines.append(f"- [{name}]({name})")
     if freeze:
         lines += ["- [freeze.json](freeze.json)", "",
-                  f"协议 SHA-256：`{freeze['hashes']['protocol.md']}`。冻结文件哈希已检查。"]
+                  f"Protocol SHA-256: `{freeze['hashes']['protocol.md']}`. Frozen file hashes have been verified."]
     lines.append("")
     output = Path(output) if output else run_dir / "report.md"
     # Existing reports remain evidence; use a new output name to regenerate.
@@ -115,14 +115,14 @@ def generate_report(run_dir, output=None):
 def generate_failure_report(run_dir, state):
     """Write an explicit failed result without inventing metrics."""
     run_dir = Path(run_dir)
-    evaluation = ("已执行，但本次流程失败，不能提供有效研究结论。"
+    evaluation = ("Evaluation ran, but the workflow failed; no valid research conclusion is available."
                   if "evaluation" in state["completed_stages"]
-                  else "未运行或未完成；不生成 IC、区间或假设结论。")
-    lines = ["# Qlib 研究运行失败", "",
-             f"状态：{state['status']}。", f"失败阶段：{state['stage']}。", "",
-             f"错误：{state['error']['type']}: {state['error']['message']}", "",
-             f"效果评价：{evaluation}", "",
-             "这不是完成的研究结果；修复后应新建运行，不将失败记录改写成成功。", "",
+                  else "Not run or incomplete; no IC, intervals or hypothesis verdict are reported.")
+    lines = ["# Qlib Research Run Failed", "",
+             f"Status: {state['status']}.", f"Failed stage: {state['stage']}.", "",
+             f"Error: {state['error']['type']}: {state['error']['message']}", "",
+             f"Evaluation: {evaluation}", "",
+             "This is not a completed research result. After fixing the cause, create a new run and preserve this failure record.", "",
              "- [manifest.json](manifest.json)", "- [checks.json](checks.json)",
              "- [traceback.txt](traceback.txt)", ""]
     output = run_dir / ("failure-report.md" if (run_dir / "report.md").exists() else "report.md")
