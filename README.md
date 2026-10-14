@@ -2,7 +2,9 @@
 
 # Qlib Hypothesis Lab
 
-**From a natural-language factor hypothesis to a reproducible research decision.**
+**An Agent Skill for reproducible quantitative research with Microsoft Qlib.**
+
+Turn a short research prompt into a defined experiment, saved evidence and a research report.
 
 Agent Skills · Quantitative Research · Python · Microsoft Qlib
 
@@ -12,7 +14,7 @@ Agent Skills · Quantitative Research · Python · Microsoft Qlib
 
 ---
 
-Can an agent turn a market intuition into a disciplined experiment? This project combines an **agent skill for research judgment** with a **Python runtime for deterministic calculations**, using [Microsoft Qlib](https://github.com/microsoft/qlib) for US equity data and expressions.
+**Qlib Hypothesis Lab is an Agent Skill** that guides an AI agent through US equity price/volume factor research: clarify a hypothesis, define an experiment, run a paired comparison and explain the evidence. It includes a companion **Python runtime** for validated calculations and report generation, using [Microsoft Qlib](https://github.com/microsoft/qlib) for data access and expressions.
 
 > **One research goal → a defined experiment → a report backed by evidence.**
 >
