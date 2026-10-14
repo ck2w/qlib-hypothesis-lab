@@ -1,37 +1,37 @@
-# 研究协议与当前支持范围
+# Research protocol and supported scope
 
-在把假设转成配置前阅读。具体默认参数以目标仓库的 `configs/reversal_volume.yaml` 为准；它是一个已运行案例，不是所有假设的默认答案。
+Read this before translating a hypothesis into configuration. Refer to the target repository's `configs/reversal_volume.yaml` for concrete example parameters. It is a completed case, not the default answer to every hypothesis.
 
-## 判断输入是否可执行
+## Assess whether the input is executable
 
-当前工具固定三个基础特征角色 `rev`、`rv`、`vol20`，每个角色可以配置原始 Qlib 表达式与完整窗口条件。候选为两个标准化基础特征的带符号乘积，再标准化。模型是三基础特征的 Ridge 对照与加入候选的 Ridge；标签是未来两个开盘价的收益比。
+The tools have three fixed base-feature roles: `rev`, `rv` and `vol20`. Each accepts a raw Qlib expression and complete-window conditions. The candidate is a signed product of two standardized base features, then standardized again. The comparison uses a Ridge model with the three base features and another Ridge model adding the candidate. Labels are return ratios between two future opening prices.
 
-能在这个结构内准确表达的假设可进入配置。需要独立候选公式、不同模型族、基本面字段、不同标签类型或不同候选结构时，列出原定义、当前不支持项和需要的代码/测试适配，等设计明确后再实施。不能把所有输入都替换成低量反转示例。
+A hypothesis that can be represented faithfully within this structure can proceed to configuration. For an independent candidate formula, another model family, fundamental fields, another label type or another candidate structure, list the original definition, unsupported requirements and necessary code/test adaptations. Implement only after the design is clear. Preserve the intended hypothesis rather than replacing every input with the low-volume reversal example.
 
-允许的行情字段和算子由 `tools/lab/config.py` 校验。窗口计数须覆盖公式依赖的字段及历史区间，分母检查须匹配实际公式。表达式传入校验器，不运行来自论文或描述的任意 Python。
+`tools/lab/config.py` validates the allowed market fields and operators. Window counts must cover each formula's field dependencies and historical interval; denominator checks must match the actual formula. Pass expressions through the validator rather than executing arbitrary Python from a paper or description.
 
-## 协议必须明确
+## Required protocol details
 
-- 假设及输入出处：数学表达式、窗口、预期方向、经济解释与可证伪问题。
-- 数据与时点：已有数据路径、历史成员池、信号何时可知、标签进入/退出时点。
-- 对照：基准因子、候选、模型与参数；单因子评价和组合增量分别回答什么。
-- 切分：训练和样本外信号日期、标签跨界剔除、年度结果是否只拆报告、预热与标签尾部。
-- 评价：主指标、支持标准、区间方法、辅助指标；已有测试期是否被查看。
+- **Hypothesis and source:** mathematical expression, windows, expected direction, economic rationale and falsifiable question.
+- **Data and timing:** existing data path, historical membership universe, signal availability and label entry/exit timing.
+- **Comparison:** baseline factors, candidate, models and parameters; the distinct questions answered by standalone evaluation and incremental comparison.
+- **Split:** train and out-of-sample signal dates, purging labels across the boundary, whether annual results are report-only slices, warm-up and label-tail data.
+- **Evaluation:** primary metric, support criterion, interval method, auxiliary metrics and whether the test period has already been inspected.
 
-只对有实质歧义的项目询问；用户已经明确的规则或授权沿用的项目约定直接记录。
+Ask only about substantive ambiguities. Record rules the user has already specified or project conventions they have authorized.
 
-## 本工作流的时间与样本规则
+## Timing and sample rules
 
-按统一交易日历构造连续个股特征和标签，再按信号日期的历史指数成员筛选。完整历史窗口由 Count 条件约束；Qlib Mean 非空不等于窗口完整。
+Construct continuous per-stock features and labels on a common trading calendar, then select historical index members by signal date. Enforce complete historical windows with Count conditions; a non-null Qlib Mean does not establish window completeness.
 
-每天在特征合格成员池内做截面标准化，ddof=0；常数列置零。这个池不依赖未来标签可用性。之后筛选有效标签和正的进入/退出开盘价，供两模型使用同样的训练及评价样本。
+Standardize cross-sectionally each day within the feature-valid historical member pool, with ddof=0; set constant columns to zero. This pool is independent of future label availability. Then filter for valid labels and positive entry/exit opening prices, using identical training and evaluation samples for both models.
 
-训练标签结束日进入样本外时剔除。年度样本外报告使用同一模型；不把下一年的标签尾部价格当成当年训练特征。具体年份由确认后的配置决定。
+Purge training labels whose end date enters the out-of-sample period. Annual out-of-sample reports use the same trained models. Next year's label-tail prices are not current-year training features. Use the years specified in the confirmed configuration.
 
-主指标是双方共同股票与共同有效日期上的日度 Spearman IC 差；常数日保留 NA。日期块 bootstrap 保留每日配对和局部时间依赖，有效日期不足块长时不估计正式区间。
+The primary metric is the daily Spearman IC difference on common stocks and common valid dates. Constant days remain NA. A date-block bootstrap preserves daily pairing and local temporal dependence. When there are fewer valid dates than the block length, do not estimate a formal interval.
 
-## 预设判断
+## Predefined decision rule
 
-当前支持标准为合并样本外平均增量>0，且 bootstrap 区间下界>0。否则报告未获支持；区间无法估计时报告无法完成判定。单因子 IC 为正不能替代这个判断。交易成本、借券与容量未在当前预测评价中建模。
+Support currently requires a positive pooled out-of-sample mean increment and a bootstrap interval lower bound above zero. Otherwise report “not supported.” If the interval cannot be estimated, report that the decision could not be completed. Positive standalone factor IC cannot replace this criterion. The prediction evaluation does not model transaction costs, borrowing or capacity.
 
-示例是低量增强短期反转：5日反转、5/60日相对量、20日波动率，以及标准化乘积。要复现它，读取仓库的案例协议与配置；不要凭本文重建参数。
+The example tests low volume strengthening short-term reversal: five-day reversal, 5/60-day relative volume, 20-day volatility and a standardized interaction. To reproduce it, read the repository's case protocol and configuration rather than reconstructing parameters from this reference.

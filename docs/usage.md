@@ -1,6 +1,6 @@
 # Run a configured research experiment
 
-Run commands from the repository root. Python 3.12 and uv are required. This workflow assumes an existing local Qlib US daily dataset; data acquisition is a separate step. Market data and run outputs remain outside Git.
+Run commands from the repository root. Python 3.12 and uv are required. This workflow assumes an existing local Qlib US daily dataset; data acquisition is a separate step. Market data and run outputs remain outside Git. For dataset requirements, expected metrics and numerical comparison commands, follow the [reproduction guide](reproducibility.md).
 
 ## Environment and data
 
@@ -14,9 +14,11 @@ Replace the data path with a dataset containing `calendars/day.txt`, `features/`
 ## Tests and development run
 
 ```bash
-PYTHONPATH=tools uv run --locked python -m pytest -p no:cacheprovider tests -q
+PYTHONPATH=tools uv run --locked python -m pytest -p no:cacheprovider tests --ignore=tests/test_collect_yahoo.py -q
 uv run --locked python tools/manual_experiment.py --config configs/reversal_volume.yaml
 ```
+
+This runs the core suite. The optional collector test needs a separate upstream checkout; see the [reproduction guide](reproducibility.md#1-prepare-the-environment) for the full-suite setup.
 
 The default development slice ends on 2018-03-30. It evaluates in-sample predictions to check the workflow, not to establish OOS evidence. Each run prints a new directory under `runs/` and automatically creates a report on success.
 

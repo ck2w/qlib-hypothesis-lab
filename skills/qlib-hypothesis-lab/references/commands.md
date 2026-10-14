@@ -1,62 +1,64 @@
-# 命令与运行状态
+# Commands and run states
 
-以下命令从已确认的 `qlib-hypothesis-lab` 仓库根运行。skill 自身不包含计算工具副本；需要目标仓库的 `tools/`、`pyproject.toml`、`uv.lock` 与配置。安装位置可以变化，项目路径由用户工作区确定。
+Run these commands from the confirmed `qlib-hypothesis-lab` repository root. The skill does not bundle copies of the calculation tools; it requires the target repository's `tools/`, `pyproject.toml`, `uv.lock` and configurations. The skill can be installed elsewhere; locate the project through the user's workspace.
 
-## 校验与测试
+## Validation and tests
 
-选定本次配置后，用实际路径替换示例。配置检查不取数：
+Use the actual selected configuration path in place of the example. Configuration validation does not load market data:
 
 ```bash
 PYTHONPATH=tools uv run --locked python -c 'from lab.config import load_config; load_config("configs/reversal_volume.yaml"); print("config valid")'
 ```
 
-相关测试可按改动选择；全套为：
+Select tests relevant to the change. The core suite requires no upstream collector checkout:
 
 ```bash
-PYTHONPATH=tools uv run --locked python -m pytest -p no:cacheprovider tests -q
+PYTHONPATH=tools uv run --locked python -m pytest -p no:cacheprovider tests --ignore=tests/test_collect_yahoo.py -q
 ```
 
-## 执行
+For changes to collection tools, also run `tests/test_collect_yahoo.py` after preparing the separate upstream checkout as described in the target repository's `docs/reproducibility.md`. With that checkout available, omit `--ignore` to run the full suite.
 
-开发模式在配置指定的样本内小片段上运行，输出不能作为样本外证据：
+## Execution
+
+Development mode uses the configured small in-sample slice. Its output is not out-of-sample evidence:
 
 ```bash
 uv run --locked python tools/manual_experiment.py --config configs/reversal_volume.yaml
 ```
 
-完整研究命令如下；仅当这个配置与协议是本次要执行的设计时使用：
+Use the full research command only when this configuration and protocol represent the intended experiment:
 
 ```bash
 uv run --locked python tools/manual_experiment.py --config configs/reversal_volume.yaml --full --protocol examples/reversal-volume/experiment.md
 ```
 
-完整入口自动创建新的运行目录、冻结和核对输入、执行并生成报告。不要把上面的示例路径当成用户尚未定义假设的完成配置。
+The full entry point creates a new run directory, freezes and verifies inputs, executes the experiment and generates a report. These example paths are not a completed configuration for a hypothesis that has yet to be defined.
 
-可选的输入检查：在完整命令中加 `--freeze-only`，仅冻结，不训练。对这个新目录单独核对：
+For an optional input-only check, add `--freeze-only` to the full command. This freezes inputs without training. Verify the new directory separately:
 
 ```bash
 uv run --locked python tools/check_freeze.py "$RUN_DIR" --config configs/reversal_volume.yaml
 ```
 
-RUN_DIR 必须是该次命令实际打印的目录。代码或输入已改变时校验会拒绝，不通过改写旧快照绕过它。
+Set `RUN_DIR` to the directory actually printed by the command. Verification rejects changed code or inputs; resolve the drift rather than rewriting an old snapshot to bypass the check.
 
-## 已有结果
+## Existing results
 
-新运行自动生成报告；旧目录已有完整证据但尚无 report.md 时：
+New runs generate reports automatically. For an older directory with complete evidence but no `report.md`:
 
 ```bash
 uv run --locked python tools/generate_report.py "$RUN_DIR"
 ```
 
-该命令不训练；已有报告不覆盖。只读报告请求直接读取现有文件。
+This command does not train or overwrite an existing report. For a read-only report request, read the existing files directly.
 
-| 状态 | 处理 |
+| State | Action |
 |---|---|
-| running | 还未结束，不能提前报告成功 |
-| frozen | 仅有输入快照，没有完成研究 |
-| completed | 查看run_type区分开发与正式，读取主指标和报告 |
-| data_failed | 依据数据路径/读取错误排障，保留失败记录 |
-| check_failed | 解决配置、冻结、特征或样本检查问题后新建运行 |
-| runtime_failed | 依据失败阶段及traceback定位错误，不填造结果 |
+| `running` | Wait for completion before reporting success. |
+| `frozen` | Input snapshots exist; research has not completed. |
+| `completed` | Check `run_type` to distinguish development from a full run; read the primary metrics and report. |
+| `data_failed` | Diagnose the data path or loading error and retain the failure record. |
+| `check_failed` | Resolve configuration, freeze, feature or sample checks before creating a new run. |
+| `runtime_failed` | Diagnose the failed stage and traceback; report unavailable results as unavailable. |
 
-manifest/checks记录阶段、命令、环境及诊断；summary/daily_ic与年度文件提供效果证据。报告中的数字须能定位到这些文件。已看过的测试期间作为复现或探索性结果标记，不称新的独立验证。
+The manifest and checks record stages, commands, environment and diagnostics. Summary, daily IC and annual files provide effect estimates. Every reported number must be traceable to these files. Label results from a previously inspected test period as reproduction or exploration, not new independent validation.

@@ -22,4 +22,4 @@ The candidate's standalone mean IC was -0.005095, with q5−q1 mean forward retu
 
 ## Reproduce
 
-Follow [usage](../../docs/usage.md) with your existing Qlib dataset. Each full command creates a new run and freezes inputs before loading data. Data contents are not embedded in the code freeze; retain your dataset version. The showcased environment is macOS arm64, Python 3.12, pyqlib 0.9.7 and pandas 2.3.3. Other platforms and a fresh installation have not been tested.
+Follow the [reproduction guide](../../docs/reproducibility.md) for dataset requirements, commands and a side-by-side comparison with this result. See [usage](../../docs/usage.md) for additional CLI modes. Each full command creates a new run and freezes inputs before loading data. Data contents are not embedded in the code freeze; retain your dataset version. The original data snapshot and complete local run are not distributed, so exact numerical reproduction from the public files alone is not possible. The showcased environment is macOS arm64, Python 3.12, pyqlib 0.9.7 and pandas 2.3.3. Other platforms and a fresh installation have not been tested.

@@ -1,38 +1,38 @@
 ---
 name: qlib-hypothesis-lab
-description: 当用户希望使用 Qlib 检验美股价量因子假设时使用。接收自然语言因子假设或因子描述，明确计算公式与研究时点，制定实验协议，读取已配置的历史数据，执行因子评价及其对现有因子组合的增量检验，生成可追溯的研究报告。定义不明确或超出工具支持范围时，先澄清或提出适配需求。
+description: Use when a user wants to test a US equity price/volume factor hypothesis with Qlib. Translate a natural-language hypothesis or factor description into precise formulas, signal timing and a research protocol; evaluate the factor and its incremental value in an existing factor combination using configured historical data; produce a traceable report. Clarify ambiguous definitions or identify required adaptations when the design exceeds the tools' supported scope.
 ---
 
 # Qlib Hypothesis Lab
 
-把一个美股价量研究问题变成可复现的实验与有证据的结论。单因子预测能力和加入已有组合后的增量价值是两个不同问题。
+Turn a US equity price/volume research question into a reproducible experiment and an evidence-backed conclusion. Standalone factor predictiveness and incremental value in an existing combination are separate questions.
 
-本版配套 `qlib-hypothesis-lab` 仓库，调用其中 `tools/`，需要 Python 3.12、uv 和已配置的 Qlib 美股日频数据。定位用户指定的目标仓库，确认 `pyproject.toml`、`tools/manual_experiment.py` 和 `configs/`；不要将 skill 安装目录或课程仓库默认当成目标项目。只有解释 API 或阅读已有报告的请求，不启动新实验。
+This skill uses `tools/` in the companion `qlib-hypothesis-lab` repository. It requires Python 3.12, uv and configured Qlib US daily data. Locate the user's target repository and confirm `pyproject.toml`, `tools/manual_experiment.py` and `configs/` exist. The skill's installation directory or a course repository is not necessarily the target project. Requests to explain an API or read an existing report do not start a new experiment.
 
-## 1. 明确一个可检验问题
+## 1. Define a testable question
 
-接收假设或因子描述，整理：经济解释、精确公式与窗口、信号可知时点、标签与持有期、股票池、基准及增量比较。论文输入保留出处及原定义；整篇论文先列带出处的候选，让用户选一个再设计实验。
+From the hypothesis or factor description, specify the economic rationale, exact formula and windows, signal availability, label and holding period, universe, baseline and incremental comparison. For a paper, retain its source and original definition. For a whole paper, first list attributed candidate hypotheses and let the user select one before designing the experiment.
 
-缺失信息会改变经济含义或交易时点时，集中澄清。用户已授权沿用项目约定时，列明采用的约定即可继续，不重复索要确认。定义完整后，按 [研究协议与支持范围](references/research-protocol.md) 判断能否执行；当前工具不能表示的设计，明确适配需求，不套成示例因子。
+Clarify missing details together when they change the economic meaning or trading timing. If the user has already authorized project conventions, state those conventions and continue without asking again. Once the definition is complete, assess feasibility against [Research protocol and supported scope](references/research-protocol.md). Identify required adaptations when the tools cannot express the design; preserve the user's hypothesis rather than substituting the example factor.
 
-## 2. 固定实验协议
+## 2. Fix the research protocol
 
-保存本次 YAML 和研究协议，明确训练/样本外日期、原始与候选公式、同样本模型对照、主判定和辅助指标。复用输入前检查其内容确实符合本次假设。
+Save the experiment's YAML and protocol. Specify train/out-of-sample dates, raw and candidate formulas, model comparisons on identical samples, the primary decision rule and auxiliary metrics. Before reusing inputs, check that their contents match this hypothesis.
 
-按用户已有授权执行；新定义存在未解决的研究歧义时先确认。样本外期间已看过则记录 `oos_previously_seen: true`，后续改动属于探索性研究或工作流复现。
+Proceed within the user's existing authorization. Resolve substantive research ambiguities in a new definition before execution. If the out-of-sample period has already been inspected, record `oos_previously_seen: true`; subsequent changes are exploratory research or workflow reproduction.
 
-## 3. 检查并运行
+## 3. Check and run
 
-首次使用环境或数据路径不明确时读 [数据与环境](references/data-guide.md)。按 [命令与状态](references/commands.md) 验证配置、运行必要测试并执行。配置或代码修改后运行相关测试；完整工具变更运行全套测试。只读取已有报告无需训练或运行全套测试。
+Read [Data and environment](references/data-guide.md) for a new environment or an unclear data path. Follow [Commands and run states](references/commands.md) to validate the configuration, run necessary tests and execute. Run relevant tests after configuration or code changes, and the full suite for changes across the tool implementation. Reading an existing report requires neither training nor the full test suite.
 
-正式入口会先冻结并校验配置、协议、代码和依赖，再取数、构造特征与标签、拟合及评价。只有需要单独检查输入时才用 `--freeze-only`，它不是完成的实验。
+The full-run entry point freezes and verifies the configuration, protocol, code and dependencies before loading data, constructing features and labels, fitting models and evaluating results. Use `--freeze-only` only for a separate input check; it does not complete an experiment.
 
-检查失败时依据 manifest、失败报告和 traceback 解释原因。只有解决实际失败后才新建运行；当前任务没有授权的数据下载、定义替换或模型变更，作为适配方案提出。
+Explain failures using the manifest, failure report and traceback. Create a new run after resolving the actual failure. Propose data downloads, definition substitutions or model changes as adaptations when the current task does not authorize them.
 
-## 4. 报告与解释
+## 4. Report and interpret
 
-读取实际运行目录的 `report.md`、`manifest.json` 和对应指标文件。区分样本内开发、只冻结、成功研究和失败；假设未获支持仍可以是成功完成的研究。
+Read `report.md`, `manifest.json` and the corresponding metric files from the actual run directory. Distinguish in-sample development, freeze-only, completed research and failure. A hypothesis that is not supported can still be a successfully completed study.
 
-主结论使用预先定义的配对 IC 增量及区间；单因子 IC、年度、分组收益与排名变化作为辅助证据。解释“未获支持”与“证明没有效果”的区别，不因结果不理想更换符号、窗口或隐去结果。
+Base the primary conclusion on the predefined paired IC increment and its interval. Use standalone factor IC, annual results, group returns and rank changes as auxiliary evidence. Explain the difference between “not supported” and “proven to have no effect.” Preserve the predefined sign, windows and observed results when the outcome is unfavorable.
 
-最终给出研究问题、实际方法、主要数字和不确定性、结论、报告与证据路径。失败时报告停在哪一步及哪些评价未完成。分组收益和信号排名变化不等于计入成本的可交易收益与组合换手。
+Return the research question, actual method, key numbers and uncertainty, conclusion, and paths to the report and evidence. For failures, identify the last stage reached and evaluations left unfinished. Group returns and signal rank changes are not cost-adjusted tradable returns or portfolio turnover.

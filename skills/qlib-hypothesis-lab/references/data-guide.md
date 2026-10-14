@@ -1,13 +1,15 @@
-# 已有数据与环境
+# Existing data and environment
 
-仅在环境首次使用、数据路径缺失或读取失败时阅读。当前skill读取已有Qlib美股日频数据，不自动准备任意数据源。
+Read this when using an environment for the first time, when the data path is missing or when data loading fails. The current skill reads existing Qlib US daily data; it does not automatically prepare arbitrary data sources.
 
-在目标项目中使用 `uv run --locked`；需要恢复锁定环境时执行 `uv sync --locked`。不依赖终端是否显示base或手动激活虚拟环境。
+Use `uv run --locked` in the target project. Restore the locked environment with `uv sync --locked` when needed. Execution does not depend on a terminal's `base` indicator or manual virtual-environment activation.
 
-读取进程实际的 `QLIB_DATA_DIR`。如果没有设置，查用户已有环境配置或询问数据路径；不假定存在自动读取.env的实现，不使用作者个人路径。它指向包含 calendars、features、instruments 的 Qlib provider 目录。
+Read the process's actual `QLIB_DATA_DIR`. If it is unset, check the user's existing environment configuration or ask for the dataset path. The application does not automatically load `.env`; use the user's path rather than the author's personal path. It must point to the Qlib provider directory containing `calendars`, `features` and `instruments`.
 
-最小检查只确认实际目录及必需文件存在、需要的字段可读；不要新增供应商数据审计或完整成员覆盖门槛。成员池使用历史sp500.txt；all.txt表示导入行情范围，不能代替历史成员池。
+Perform the minimum check: the actual directory and required files exist, and required fields are readable. Avoid adding supplier audits or full membership-coverage gates. The universe uses historical `sp500.txt` intervals; `all.txt` describes imported price coverage and cannot replace historical membership.
 
-当前CLI使用kernels=1避免macOS/stdin多进程启动问题。已有数据不修改，运行产物写入项目忽略的runs目录。
+The CLI uses `kernels=1` to avoid macOS/stdin multiprocessing startup issues. Keep existing data unchanged. Run artifacts are written to the project's ignored `runs/` directory.
 
-如果用户要求新下载、数据修复或不同数据类型，明确其是否超出当前授权和工具范围；使用已有数据的研究不顺带启动全市场下载。
+For downloads, repairs or different data types, identify whether the request exceeds current authorization or tool support. A study using existing data does not implicitly authorize a whole-market download.
+
+For the provider layout, snapshot retention and numerical reproduction limits, see the target repository's `docs/reproducibility.md`.
